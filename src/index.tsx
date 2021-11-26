@@ -1,14 +1,23 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
 import { BrowserRouter as Router } from "react-router-dom";
+import {
+  NetworkInfo,
+  WalletProvider,
+  WalletStatus,
+  getChainOptions,
+} from "@terra-money/wallet-provider";
 
-ReactDOM.render(
-  <React.StrictMode>
+getChainOptions().then((chainOptions) => {
+  ReactDOM.render(
+    <React.StrictMode>
       <Router>
-    <App />
-    </Router>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
-
+        <WalletProvider {...chainOptions}>
+          <App />
+        </WalletProvider>
+      </Router>
+    </React.StrictMode>,
+    document.getElementById("root")
+  );
+});
