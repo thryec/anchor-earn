@@ -1,9 +1,13 @@
 import { useWallet } from "@terra-money/wallet-provider";
-import { useEffect, useState } from "react";
+import { LCDClient } from "@terra-money/terra.js";
+import { useConnectedWallet } from "@terra-money/wallet-provider";
+import { useEffect, useState, useMemo } from "react";
 import "./styles.css";
 
 const Home = () => {
   const [connected, setConnected] = useState(false);
+  const [balance, setBalance] = useState<null | string>();
+  const connectedWallet = useConnectedWallet();
 
   const {
     status,
@@ -18,17 +22,6 @@ const Home = () => {
     disconnect,
   } = useWallet();
 
-  const displayStatus = () => {
-    return (
-      <div>
-        <p>Status: {status}</p>
-        <p>Network Name: {network.name}</p>
-        <p>Chain ID: {network.chainID}</p>
-        <p>Wallets: {wallets}</p>
-      </div>
-    );
-  };
-
   const connectTerraStation = () => {
     connect(availableConnections[0].type);
     setConnected(true);
@@ -39,22 +32,44 @@ const Home = () => {
     setConnected(false);
   };
 
+  const lcd = useMemo(() => {
+    if (!connectedWallet) {
+      return null;
+    }
+
+    return new LCDClient({
+      URL: connectedWallet.network.lcd,
+      chainID: connectedWallet.network.chainID,
+    });
+  }, [connectedWallet]);
+
+
   useEffect(() => {
-    displayStatus();
-  }, []);
+    const fetchBalance = async () => {
+      if (connectedWallet && lcd) {
+        console.log('wallet: ', connectedWallet)
+        const res = await lcd.bank.balance(connectedWallet.walletAddress)
+        const coins = res[0].toString() 
+        setBalance(coins)
+      } else {
+        setBalance(null);
+      }
+    }
+    fetchBalance()
+  }, [connectedWallet, lcd]);
+
 
   return (
     <div className="home">
-      <section>
-        {/* {displayStatus()} */}
-        {connected ? (
-          <div>
-            Status: Connected <button onClick={disconnectTerraStation}>Disconnect</button>
-          </div>
-        ) : (
-          <button onClick={connectTerraStation}>Connect</button>
-        )}
-      </section>
+      <div>
+        <p>Status: {status}</p>
+        <p>Network Name: {network.name}</p>
+        <p>Chain ID: {network.chainID}</p>
+      </div>
+
+      <div>
+        <p>Wallet Balance: {balance}</p>
+      </div>
     </div>
   );
 };
